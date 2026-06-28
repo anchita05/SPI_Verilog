@@ -1,0 +1,59 @@
+module spi_master (
+    input  wire        clk,
+    input  wire        rst,
+    input  wire [15:0] data_in,
+    output wire        spi_cs_l,
+    output wire        spi_sclk,
+    output wire        spi_data,
+    output wire [4:0]  counter,
+    output wire        busy
+);
+    reg [15:0] shift_reg;
+    reg [4:0]  count;
+    reg        cs_l, sclk, sdata;
+    reg [1:0]  state;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            shift_reg <= 16'b0;
+            count     <= 5'd16;
+            cs_l      <= 1'b1;
+            sclk      <= 1'b0;
+            sdata     <= 1'b0;
+            state     <= 2'd0;
+        end else begin
+            case (state)
+                0: begin
+                    shift_reg <= data_in;   // latch data
+                    cs_l      <= 1'b0;
+                    sclk      <= 1'b0;
+                    state     <= 1;
+                end
+                1: begin
+                    sdata <= shift_reg[15]; // MSB first
+                    shift_reg <= {shift_reg[14:0], 1'b0};
+                    sclk  <= 1'b0;
+                    count <= count - 1;
+                    state <= 2;
+                end
+                2: begin
+                    sclk  <= 1'b1;
+                    if (count > 0)
+                        state <= 1;
+                    else begin
+                        count <= 5'd16;
+                        cs_l  <= 1'b1;
+                        state <= 0;
+                    end
+                end
+                default: state <= 0;
+            endcase
+        end
+    end
+
+    assign spi_cs_l = cs_l;
+    assign spi_sclk = sclk;
+    assign spi_data = sdata;
+    assign counter  = count;
+    assign busy     = (state != 0);
+endmodule
