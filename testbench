@@ -1,0 +1,32 @@
+`timescale 1ns / 1ps
+module spi_tb;
+    reg clk;
+    reg rst;
+    reg [15:0] data_in;
+    wire spi_cs_l;
+    wire spi_sclk;
+    wire spi_data;
+    wire [4:0] counter;
+    spi_master dut (.clk(clk), .rst(rst), .counter(counter), 
+                   .data_in(data_in), .spi_cs_l(spi_cs_l), 
+                   .spi_sclk(spi_sclk), .spi_data(spi_data));
+    always #5 clk = ~clk; //Clock generation
+    
+    //Reset Logic
+    initial begin
+    clk = 0;
+    rst = 1;
+    data_in = 0;
+    end
+    
+    //State Logic
+    initial begin
+        #10 rst = 1'b0;
+        #350 data_in = 16'hA569;
+        #350 data_in = 16'h2563;
+        #350 data_in = 16'h9B63;
+        #350 data_in = 16'h6A61;
+        #350 data_in = 16'hA265;
+        #350 data_in = 16'h7564;
+    end
+endmodule
